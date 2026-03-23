@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import KolkataMap from "./KolkataMap";
 import Vegebatel from "./Vegebatel";
+import DONOTWANT from "./DONOTWANT";
 import "./App.css";
 
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
@@ -15,6 +16,7 @@ function App() {
 
   if (page === "heat") return <KolkataMap />;
   if (page === "vegetation") return <Vegebatel />;
+  if (page == "donotwant") return <DONOTWANT />;
 
   return <Landing setPage={setPage} />;
 }
@@ -111,11 +113,11 @@ function Buttons({ setPage }) {
         HeatIndex
       </button>
 
-      <button style={makeStyle("#00ff88")} onClick={() => setPage("vegetation")}>
+      <button style={makeStyle("#27c037")} onClick={() => setPage("vegetation")}>
         Vegetation
       </button>
 
-      <button style={makeStyle("#00aaff")}>
+      <button style={makeStyle("#00aaff")} onClick={() => setPage("donotwant")}>
         Rainfall
       </button>
 
