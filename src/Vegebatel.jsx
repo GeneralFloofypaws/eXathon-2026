@@ -14,12 +14,14 @@ import L from "leaflet";
 
 const FitBounds = ({ geoData }) => {
   const map = useMap();
+
   useEffect(() => {
     if (geoData) {
       const layer = L.geoJSON(geoData);
       map.fitBounds(layer.getBounds());
     }
   }, [geoData]);
+
   return null;
 };
 
@@ -27,19 +29,21 @@ const VegebatelMap = () => {
 
   const kolkataPosition = [22.5726, 88.3639];
 
+  const [panelOpen] = useState(true);
+  const [showBoundary, setShowBoundary] = useState(true);
+  const [showGridBorders, setShowGridBorders] = useState(true);
+  const [showVegetation, setShowVegetation] = useState(true);
+  const [showZones, setShowZones] = useState(true);
+
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [hoveredLevel, setHoveredLevel] = useState(null);
+
+  const [geoData, setGeoData] = useState(null);
+  const [vegetationData, setVegetationData] = useState(null);
+  const [gridCells, setGridCells] = useState([]);
+  const [zonesVeg, setZonesVeg] = useState([]);
+
   const cellSize = 0.005;
-  const sigma = 0.003;
-
-  const [geoData,setGeoData] = useState(null);
-  const [vegetationData,setVegetationData] = useState(null);
-  const [gridCells,setGridCells] = useState([]);
-  const [zonesVeg,setZonesVeg] = useState([]);
-
-  const [showZones,setShowZones] = useState(true);
-  const [showGridBorders,setShowGridBorders] = useState(true);
-
-  const [legendOpen,setLegendOpen] = useState(false);
-  const [hoveredLevel,setHoveredLevel] = useState(null);
 
   const zones = [
     { name:"Park Street",center:[22.5544,88.3497],area:1.30e6},
@@ -67,7 +71,7 @@ const VegebatelMap = () => {
       .then(r=>r.json())
       .then(data=>{
         const k=data.features.find(f=>{
-          const name=(f.properties.district||f.properties.name||"").toLowerCase();
+          const name=(f.properties.district||f.properties.DISTRICT||f.properties.name||"").toLowerCase();
           return name.includes("kolkata");
         });
         if(k) setGeoData(k);
@@ -78,7 +82,7 @@ const VegebatelMap = () => {
     fetch("/kolkata-vegebatels.geojson")
       .then(r=>r.json())
       .then(data=>{
-        const polys=data.features.filter(f=>f.geometry.type!=="Point");
+        const polys=data.features.filter(f=>f.geometry.type.toLowerCase()!=="point");
         setVegetationData(polys);
       });
   },[]);
@@ -91,13 +95,10 @@ const VegebatelMap = () => {
 
     for(let lat=minLat;lat<=maxLat;lat+=cellSize){
       for(let lon=minLng;lon<=maxLng;lon+=cellSize){
-
         const pt=turf.point([lon,lat]);
-
         if(turf.booleanPointInPolygon(pt,geoData)){
           cells.push({center:[lat,lon],vegDist:null});
         }
-
       }
     }
 
@@ -107,22 +108,22 @@ const VegebatelMap = () => {
 
   useEffect(()=>{
 
-    if(!vegetationData || !gridCells.length) return;
+    if(!vegetationData||!gridCells.length) return;
 
     const results=gridCells.map(cell=>{
 
       const [lat,lon]=cell.center;
+
       let vegDist=Infinity;
 
       vegetationData.forEach(poly=>{
         const center=turf.center(poly).geometry.coordinates;
+        const layerLat=center[1];
+        const layerLon=center[0];
 
-        const d=Math.sqrt(
-          (lat-center[1])**2 +
-          (lon-center[0])**2
-        );
+        const dist=Math.sqrt((lat-layerLat)**2+(lon-layerLon)**2);
 
-        vegDist=Math.min(vegDist,d);
+        vegDist=Math.min(vegDist,dist);
       });
 
       return {...cell,vegDist};
@@ -131,237 +132,326 @@ const VegebatelMap = () => {
 
     setGridCells(results);
 
-  },[vegetationData]);
+  },[vegetationData,gridCells.length]);
 
-  const vegScore = (dist) =>
-    Math.exp(-(dist * dist) / (2 * sigma * sigma));
+  const sigma=0.003;
 
-  const getColor = (dist) => {
-    const score = vegScore(dist);
-    if (score > 0.65) return "rgb(0,100,0)";
-    if (score > 0.35) return "rgb(144,238,144)";
-    return "rgb(255,255,0)";
+  const getColor=(d)=>{
+
+    const t=Math.min(1,d/sigma);
+
+    const dark=[0,100,0];
+    const light=[144,238,144];
+    const yellow=[255,255,0];
+
+    let r,g,b;
+
+    if(t<0.5){
+
+      const p=t*2;
+
+      r=dark[0]*(1-p)+light[0]*p;
+      g=dark[1]*(1-p)+light[1]*p;
+      b=dark[2]*(1-p)+light[2]*p;
+
+    }else{
+
+      const p=(t-0.5)*2;
+
+      r=light[0]*(1-p)+yellow[0]*p;
+      g=light[1]*(1-p)+yellow[1]*p;
+      b=light[2]*(1-p)+yellow[2]*p;
+
+    }
+
+    return `rgb(${r},${g},${b})`;
   };
 
-  const getLevel = (dist) => {
-    const score = vegScore(dist);
-    if (score > 0.65) return "dense";
-    if (score > 0.35) return "moderate";
-    return "sparse";
+  const getZoneColor = (level) => {
+  if (level === "dense") return "rgb(0,100,0)";
+  if (level === "moderate") return "rgb(144,238,144)";
+  return "rgb(255,255,0)";
+}; 
+
+  const getLevel=(d)=>{
+    if(d<sigma*0.33) return "Dense";
+    if(d<sigma*0.66) return "Moderate";
+    return "Sparse";
   };
 
-  useEffect(()=>{
+useEffect(() => {
 
-    if(!gridCells.length) return;
+  if (!gridCells.length) return;
 
-    const results = zones.map(zone => {
+  const results = zones.map(zone => {
 
-      const radius = Math.sqrt(zone.area / Math.PI);
+    const radius = Math.sqrt(zone.area / Math.PI);
 
-      const cellsInside = gridCells.filter(cell=>{
-        const d=Math.sqrt(
-          (cell.center[0]-zone.center[0])**2+
-          (cell.center[1]-zone.center[1])**2
-        );
-        return d<=radius;
-      });
+    let counts = {
+      dense: 0,
+      moderate: 0,
+      sparse: 0
+    };
 
-      if(!cellsInside.length)
-        return {...zone,veg:null,level:"sparse"};
-
-      const counts={dense:0,moderate:0,sparse:0};
-      let total=0;
-
-      cellsInside.forEach(c=>{
-        const lvl=getLevel(c.vegDist);
-        counts[lvl]++;
-        total+=c.vegDist;
-      });
-
-      const dominant =
-        Object.entries(counts)
-        .sort((a,b)=>b[1]-a[1])[0][0];
-
-      return {...zone,veg:total/cellsInside.length,level:dominant};
-
+    const cellsInside = gridCells.filter(cell => {
+      const d = Math.sqrt(
+        (cell.center[0] - zone.center[0]) ** 2 +
+        (cell.center[1] - zone.center[1]) ** 2
+      );
+      return d <= radius;
     });
 
-    setZonesVeg(results);
+    if (!cellsInside.length) {
+      return { ...zone, level: "Sparse" };
+    }
 
-  },[gridCells]);
+    cellsInside.forEach(cell => {
+      const level = getLevel(cell.vegDist).toLowerCase();
+
+      if (level === "dense") counts.dense++;
+      else if (level === "moderate") counts.moderate++;
+      else counts.sparse++;
+    });
+
+    // find majority
+    const dominant = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])[0][0];
+
+    return {
+      ...zone,
+      level: dominant 
+    };
+
+  });
+
+  setZonesVeg(results);
+
+}, [gridCells]);
 
   const densestZone =
     zonesVeg
       .filter(z=>z.veg!==null)
       .sort((a,b)=>a.veg-b.veg)[0];
 
-  const btnStyle={
-    marginBottom:"10px",
-    padding:"4px 6px",
-    background:"#1a1a1a",
-    color:"white",
-    border:"1px solid #333",
-    borderRadius:"6px",
-    cursor:"pointer",
-    fontSize:"13px"
-  };
-
   return(
 
-    <div style={{display:"flex",height:"100vh"}}>
+    <div style={{display:"flex",height:"100vh",width:"100vw"}}>
 
       <div style={{
-        width:"170px",
+        width:"160px",
         background:"#111",
         color:"white",
         padding:"15px",
         borderRight:"1px solid #333"
       }}>
 
-        <h3>Controls</h3>
+        <h2 className="controls-title">Controls</h2>
 
-        <button style={btnStyle} onClick={()=>setShowZones(v=>!v)}>
-          Toggle Zones
+        <button
+        style={{
+          marginBottom:"10px",
+          padding:"4px 6px",
+          background:"#1a1a1a",
+          color:"white",
+          border:"1px solid #333",
+          borderRadius:"6px",
+          cursor:"pointer",
+          fontSize:"13px",
+          transition:"0.2s"
+        }}
+        onMouseEnter={e=>e.target.style.background="#333"}
+        onMouseLeave={e=>e.target.style.background="#1a1a1a"}
+        onClick={()=>setShowZones(v=>!v)}
+        >
+        {showZones?"Hide Zones":"Show Zones"}
         </button>
 
-        <button style={btnStyle} onClick={()=>setShowGridBorders(v=>!v)}>
-          Grid Borders
+        <button
+        style={{
+          marginBottom:"10px",
+          padding:"4px 6px",
+          background:"#1a1a1a",
+          color:"white",
+          border:"1px solid #333",
+          borderRadius:"6px",
+          cursor:"pointer",
+          fontSize:"13px",
+          transition:"0.2s"
+        }}
+        onMouseEnter={e=>e.target.style.background="#333"}
+        onMouseLeave={e=>e.target.style.background="#1a1a1a"}
+        onClick={()=>setShowGridBorders(v=>!v)}
+        >
+        {showGridBorders?"Hide Grid Borders":"Show Grid Borders"}
         </button>
 
-        {densestZone &&
+        <button
+        style={{
+          padding:"4px 6px",
+          background:"#1a1a1a",
+          color:"white",
+          border:"1px solid #333",
+          borderRadius:"6px",
+          cursor:"pointer",
+          fontSize:"13px",
+          transition:"0.2s"
+        }}
+        onMouseEnter={e=>e.target.style.background="#333"}
+        onMouseLeave={e=>e.target.style.background="#1a1a1a"}
+        onClick={()=>setShowVegetation(v=>!v)}
+        >
+        {showVegetation?"Hide Vegetation":"Show Vegetation"}
+        </button>
+
+        {densestZone && (
           <div style={{marginTop:"15px"}}>
-            Densest vegetation
+            Densest Vegetation:
             <br/>
             <b>{densestZone.name}</b>
           </div>
-        }
+        )}
 
       </div>
 
+
+
       <div style={{flex:1,position:"relative"}}>
 
-        <div style={{position:"absolute",top:15,right:15,zIndex:1000}}>
+        <div
+  style={{
+    position: "absolute",
+    top: 15,
+    right: 15,
+    zIndex: 1000,
+  }}
+>
+  <div
+    onClick={() => setLegendOpen(!legendOpen)}
+    style={{
+      background: "rgba(17,17,17,0.9)",
+      color: "white",
+      padding: "6px 10px",
+      borderRadius: "6px",
+      border: "1px solid #333",
+      fontSize: "12px",
+      cursor: "pointer",
+      textAlign: "center",
+    }}
+  >
+    {legendOpen ? "✕ Veg Legend" : "☰ Veg Legend"}
+  </div>
 
+  {legendOpen && (
+    <div
+      style={{
+        marginTop: "6px",
+        background: "rgba(17,17,17,0.85)",
+        padding: "8px",
+        borderRadius: "6px",
+        border: "1px solid #333",
+        fontSize: "11px",
+        width: "120px",
+      }}
+    >
+      {[
+        { color: "rgb(0,100,0)", label: "dense" },
+        { color: "rgb(144,238,144)", label: "moderate" },
+        { color: "rgb(255,255,0)", label: "sparse" },
+      ].map((item, i) => (
+        <div
+          key={i}
+          onMouseEnter={() => setHoveredLevel(item.label)}
+          onMouseLeave={() => setHoveredLevel(null)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: "4px",
+            cursor: "pointer",
+          }}
+        >
           <div
-            onClick={()=>setLegendOpen(!legendOpen)}
             style={{
-              background:"rgba(17,17,17,0.9)",
-              color:"white",
-              padding:"6px 10px",
-              borderRadius:"6px",
-              border:"1px solid #333",
-              cursor:"pointer"
-            }}>
-            {legendOpen ? "✕" : "☰"}
-          </div>
-
-          {legendOpen && (
-            <div style={{
-              marginTop:"6px",
-              background:"rgba(17,17,17,0.85)",
-              padding:"8px",
-              borderRadius:"6px",
-              border:"1px solid #333",
-              color:"white"
-            }}>
-              {["dense","moderate","sparse"].map(level=>(
-                <div
-                  key={level}
-                  onMouseEnter={()=>setHoveredLevel(level)}
-                  onMouseLeave={()=>setHoveredLevel(null)}
-                  style={{display:"flex",alignItems:"center",cursor:"pointer"}}
-                >
-                  <div style={{
-                    width:12,
-                    height:12,
-                    marginRight:6,
-                    background:
-                      level==="dense" ? "rgb(0,100,0)" :
-                      level==="moderate" ? "rgb(144,238,144)" :
-                      "rgb(255,255,0)"
-                  }} />
-                  {level}
-                </div>
-              ))}
-            </div>
-          )}
-
+              width: "10px",
+              height: "10px",
+              background: item.color,
+              marginRight: "6px",
+            }}
+          />
+          <span>{item.label}</span>
         </div>
+      ))}
+    </div>
+  )}
+</div>
 
-        <MapContainer center={kolkataPosition} zoom={11} style={{height:"100%"}}>
+        <MapContainer center={kolkataPosition} zoom={11} style={{height:"100%",width:"100%"}}>
 
           <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"/>
 
           {geoData && <FitBounds geoData={geoData}/>}
 
-          {geoData &&
-            <GeoJSON
-              data={geoData}
-              style={{color:"white",weight:2,fillOpacity:0.05}}
-            />
-          }
+          {showBoundary && geoData && (
+            <GeoJSON data={geoData} style={{color:"white",weight:2,fillOpacity:0.05}}/>
+          )}
 
           {gridCells.map((cell,i)=>{
 
-            const level=getLevel(cell.vegDist);
-            const highlight=hoveredLevel===level;
+  const level = getLevel(cell.vegDist).toLowerCase();
+  const highlight = hoveredLevel === level;
 
-            return(
-              <Rectangle
-                key={i}
-                bounds={[
-                  [cell.center[0]-cellSize/2,cell.center[1]-cellSize/2],
-                  [cell.center[0]+cellSize/2,cell.center[1]+cellSize/2]
-                ]}
-                pathOptions={{
-                  color:showGridBorders?"#111":undefined,
-                  weight:showGridBorders?1:0,
-                  fillColor:getColor(cell.vegDist),
-                  fillOpacity:hoveredLevel
-                    ? highlight ? 0.9 : 0.15
-                    : 0.65
-                }}
-              />
-            );
+  return(
+    <Rectangle
+      key={i}
+      bounds={[
+        [cell.center[0]-cellSize/2,cell.center[1]-cellSize/2],
+        [cell.center[0]+cellSize/2,cell.center[1]+cellSize/2]
+      ]}
+      pathOptions={{
+        color:showGridBorders?"#111":undefined,
+        weight:showGridBorders?1:0,
+        fillColor:getColor(cell.vegDist),
+        fillOpacity: hoveredLevel
+          ? (highlight ? 0.9 : 0.15)
+          : 0.65
+      }}
+    />
+  );
+})}
 
-          })}
+         {showZones && zonesVeg.map((zone, i) => {
 
-          {showZones &&
-            zonesVeg.map((zone,i)=>{
+  const isHighlighted = hoveredLevel === zone.level;
 
-              const radius=Math.sqrt(zone.area/Math.PI);
-
-              return(
-                <Circle
-                  key={i}
-                  center={zone.center}
-                  radius={radius}
-                  pathOptions={{
-                    color:"#fff",
-                    weight:1,
-                    fillColor:getColor(zone.veg),
-                    fillOpacity:0.35
-                  }}
-                >
-                  <Popup>
-                    <b>{zone.name}</b>
-                    <br/>
-                    Area: {(zone.area/1e6).toFixed(2)} km²
-                    <br/>
-                    Density: {zone.level}
-                  </Popup>
-                </Circle>
-              );
-
-            })
-          }
+  return (
+    <Circle
+      key={i}
+      center={zone.center}
+      radius={Math.sqrt(zone.area / Math.PI)}
+      pathOptions={{
+        color: isHighlighted ? "#fff" : "#888",
+        weight: isHighlighted ? 2 : 1,
+        fillColor: getZoneColor(zone.level),
+        fillOpacity: hoveredLevel
+          ? isHighlighted ? 0.6 : 0.15
+          : 0.35
+      }}
+    >
+      <Popup>
+        <b>{zone.name}</b>
+        <br />
+        Area: {(zone.area / 1e6).toFixed(2)} km²
+        <br />
+        
+      </Popup>
+    </Circle>
+  );
+})}
 
         </MapContainer>
 
       </div>
 
     </div>
-
   );
 
 };

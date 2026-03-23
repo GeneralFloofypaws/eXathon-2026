@@ -15,6 +15,7 @@ import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { color } from "framer-motion";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -243,7 +244,7 @@ const RainfallMap = () => {
         {panelOpen && (
 
           <>
-            <h2>Controls</h2>
+            <h2 class="controls-title">Controls</h2>
 
             <button
               style={{
