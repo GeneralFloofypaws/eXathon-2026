@@ -18,6 +18,10 @@ const FitBounds = ({ geoData }) => {
 
 const VegebatelMap = () => {
   const kolkataPosition = [22.5726, 88.3639];
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [showBoundary, setShowBoundary] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showVegebatels, setShowVegebatels] = useState(true);
   const [geoData, setGeoData] = useState(null);
   const [vegebatelData, setVegebatelData] = useState(null);
   const [gridCells, setGridCells] = useState([]);
@@ -115,58 +119,146 @@ const VegebatelMap = () => {
   };
 
   return (
-    <MapContainer
-      center={kolkataPosition}
-      zoom={11}
-      style={{ height: "100vh", width: "100%" }}
-    >
-     
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        attribution="&copy; OpenStreetMap"
-      />
-      
-      {geoData && <FitBounds geoData={geoData} />}
-      {vegebatelData && <FitBounds geoData={vegebatelData} />}
-      
-      {geoData && (
-        <GeoJSON
-          data={geoData}
-          style={{
-            color: "white",
-            weight: 3,
-            fillOpacity: 0.1,
-          }}
+    <div style={{
+      display: "flex",
+      height: "100vh",
+      width: "100vw",
+      overflow: "hidden"
+    }}>
+
+      {/* SIDE PANEL TOUCH AND YOU DIE */}
+      <div
+        style={{
+          width: panelOpen ? "160px" : "0px",
+          transition: "0.3s",
+          overflow: "hidden",
+          background: "#111",
+          color: "white",
+          padding: panelOpen ? "15px" : "0px",
+          borderRight: panelOpen ? "1px solid #333" : "none"
+        }}
+      >
+        {panelOpen && (
+          <>
+            <h2 class="controls-title">Controls</h2>
+
+            <button
+              style={{
+                marginBottom: "10px",
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#333"}
+              onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+              onClick={() => setShowBoundary(prev => !prev)}
+            >
+              {showBoundary ? "Hide Borders 🏕️" : "Show Borders 🚪"}
+            </button>
+
+            <br/>
+
+            <button
+              style={{
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#333"}
+              onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+              onClick={() => setShowVegebatels(prev => !prev)}
+            >
+              {showVegebatels ? "Hide Vegetation" : "Show Vegetation"}
+            </button>
+
+            <br />
+
+            <button
+              style={{
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#333"}
+              onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+              onClick={() => setShowGrid(prev => !prev)}
+            >
+              {showGrid ? "Hide Grid" : "Show Grid"}
+            </button>
+          </>
+        )}
+      </div>
+
+      <MapContainer
+        center={kolkataPosition}
+        zoom={11}
+        minZoom={5}
+        maxZoom={17}
+        style={{ height: "100vh", width: "100%" }}
+      >
+       
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap"
         />
-      )}
-      {vegebatelData && (
-        <GeoJSON
-          data={vegebatelData}
-          style={{
-            color: "green",
-            weight: 3,
-            fillOpacity: 0.1,
-          }}
-        />
-      )}
-      {gridCells.length && gridCells.map((cell, idx) => {
-        const [lat, lon] = cell.center;
-        return (
-          <Rectangle
-            key={idx}
-            bounds={[
-              [lat - cellSize / 2, lon - cellSize / 2],
-              [lat + cellSize / 2, lon + cellSize / 2],
-            ]}
-            pathOptions={{
-              color: getColor(cell.vegebatel),
-              weight: 0,
-              fillOpacity: 0.7,
+        
+        {geoData && <FitBounds geoData={geoData} />}
+        {vegebatelData && <FitBounds geoData={vegebatelData} />}
+        
+        {showBoundary && geoData && (
+          <GeoJSON
+            data={geoData}
+            style={{
+              color: "white",
+              weight: 3,
+              fillOpacity: 0.1,
             }}
           />
-        );
-      })}
-    </MapContainer>
+        )}
+        {showVegebatels && vegebatelData && (
+          <GeoJSON
+            data={vegebatelData}
+            style={{
+              color: "green",
+              weight: 3,
+              fillOpacity: 0.1,
+            }}
+          />
+        )}
+        {showGrid && gridCells.length && gridCells.map((cell, idx) => {
+          const [lat, lon] = cell.center;
+          return (
+            <Rectangle
+              key={idx}
+              bounds={[
+                [lat - cellSize / 2, lon - cellSize / 2],
+                [lat + cellSize / 2, lon + cellSize / 2],
+              ]}
+              pathOptions={{
+                color: getColor(cell.vegebatel),
+                weight: 0,
+                fillOpacity: 0.7,
+              }}
+            />
+          );
+        })}
+      </MapContainer>
+    </div>
   );
 };
 
