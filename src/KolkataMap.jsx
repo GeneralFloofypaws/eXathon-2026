@@ -77,54 +77,53 @@ const KolkataMap = () => {
   const getHeatIndex = (temp, humidity) => (temp + 0.1 * humidity);
 
   const getColor = (temp, humidity) => {
-  if (!temp || !humidity) return "gray";
+    if (!temp || !humidity) return "gray";
 
-  const heat = getHeatIndex(temp, humidity);
-  const n = normalize(heat);
+    const heat = getHeatIndex(temp, humidity);
+    const n = normalize(heat);
 
-  if (n > 0.75) return "#8b0000";   // ki rodh ____
-  if (n > 0.5) return "red";        // ac chala
-  if (n > 0.25) return "orange";    // tao ac chala
-  return "yellow";                  // brrr
-};
+    if (n > 0.75) return "#8b0000";   // ki rodh ____
+    if (n > 0.5) return "red";        // ac chala
+    if (n > 0.25) return "orange";    // tao ac chala
+    return "yellow";                  // brrr
+  };
 
   const getOpacity = (temp, humidity) => {
-  if (!temp || !humidity) return 0.3;
+    if (!temp || !humidity) return 0.3;
 
-  const heat = getHeatIndex(temp, humidity);
-  const n = normalize(heat);
+    const heat = getHeatIndex(temp, humidity);
+    const n = normalize(heat);
 
-  if (n > 0.75) return 0.7;
-  if (n > 0.5) return 0.6;
-  if (n > 0.25) return 0.5;
-  return 0.4;
-};
+    if (n > 0.75) return 0.7;
+    if (n > 0.5) return 0.6;
+    if (n > 0.25) return 0.5;
+    return 0.4;
+  };
 
   const FlyToZone = ({ center }) => {
-  const map = useMap();
+    const map = useMap();
 
-  useEffect(() => {
-    if (center) {
-      map.panTo(center, { animate: true, duration: 1 });
-    }
-  }, [center]);
+    useEffect(() => {
+      if (center) {
+        map.panTo(center, { animate: true, duration: 1 });
+      }
+    }, [center]);
 
-  return null;
-};
+    return null;
+  };
 
-const getHeatLevel = (temp, humidity) => {
-  if (!temp || !humidity) return "loading";
+  const getHeatLevel = (temp, humidity) => {
+    if (!temp || !humidity) return "loading";
 
-  const heat = getHeatIndex(temp, humidity);
-  const n = normalize(heat);
+    const heat = getHeatIndex(temp, humidity);
+    const n = normalize(heat);
 
-  if (n > 0.75) return "extreme";
-  if (n > 0.5) return "high";
-  if (n > 0.25) return "moderate";
-  return "low";
-};
+    if (n > 0.75) return "extreme";
+    if (n > 0.5) return "high";
+    if (n > 0.25) return "moderate";
+    return "low";
+  };
 
-  
   const fetchWeather = async () => {
     try {
       const results = await Promise.all(
@@ -150,18 +149,18 @@ const getHeatLevel = (temp, humidity) => {
   };
 
   const ResetView = ({ center, zoom, trigger }) => {
-  const map = useMap();
+    const map = useMap();
 
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [trigger]);
+    useEffect(() => {
+      map.setView(center, zoom);
+    }, [trigger]);
 
-  return null;
-};
+    return null;
+  };
 
   useEffect(() => {
     fetchWeather();
-    const interval = setInterval(fetchWeather, 120_000); 
+    const interval = setInterval(fetchWeather, 120_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -188,324 +187,312 @@ const getHeatLevel = (temp, humidity) => {
   .map(z => getHeatIndex(z.temp, z.humidity))
   .filter(v => v !== undefined && !isNaN(v));
 
-const minHeat = Math.min(...heatValues);
-const maxHeat = Math.max(...heatValues);
+  const minHeat = Math.min(...heatValues);
+  const maxHeat = Math.max(...heatValues);
 
-const normalize = (value) => {
-  if (maxHeat === minHeat) return 0.5; 
-  return (value - minHeat) / (maxHeat - minHeat);
-};
+  const normalize = (value) => {
+    if (maxHeat === minHeat) return 0.5;
+    return (value - minHeat) / (maxHeat - minHeat);
+  };
 
-  
   return (
-  <div style={{ 
-    display: "flex", 
-    height: "100vh", 
-    width: "100vw", 
-    overflow: "hidden"
-  }}>
+    <div style={{
+      display: "flex",
+      height: "100vh",
+      width: "100vw",
+      overflow: "hidden"
+    }}>
 
-    {/* SIDE PANEL TOUCH AND YOU DIE */}
-    <div
-      style={{
-        width: panelOpen ? "160px" : "0px",
-        transition: "0.3s",
-        overflow: "hidden",
-        background: "#111",
-        color: "white",
-        padding: panelOpen ? "15px" : "0px",
-        borderRight: panelOpen ? "1px solid #333" : "none"
-      }}
-    >
-      {panelOpen && (
-        <>
-          <h2 class="controls-title">Controls</h2>
+      {/* SIDE PANEL TOUCH AND YOU DIE */}
+      <div
+        style={{
+          width: panelOpen ? "160px" : "0px",
+          transition: "0.3s",
+          overflow: "hidden",
+          background: "#111",
+          color: "white",
+          padding: panelOpen ? "15px" : "0px",
+          borderRight: panelOpen ? "1px solid #333" : "none"
+        }}
+      >
+        {panelOpen && (
+          <>
+            <h2 class="controls-title">Controls</h2>
 
-<button
-  style={{
-    marginBottom: "10px",
-    padding: "4px 6px",
-    background: "#1a1a1a",
-    color: "white",
-    border: "1px solid #333",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    transition: "0.2s",
-  }}
-  onMouseEnter={(e) => e.target.style.background = "#333"}
-  onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
-  onClick={() => setShowBoundary(prev => !prev)}>
-  {showBoundary ? "Hide Borders 🏕️" : "Show Borders 🚪"}
+            <button
+              style={{
+                marginBottom: "10px",
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#333"}
+              onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+              onClick={() => setShowBoundary(prev => !prev)}
+            >
+              {showBoundary ? "Hide Borders 🏕️" : "Show Borders 🚪"}
+            </button>
 
+            <br/>
 
+            <button
+              style={{
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#333"}
+              onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+              onClick={() => setShowHeatZones(prev => !prev)}
+            >
+              {showHeatZones ? "Hide Heat Zones 🌤️" : "Show Heat Zones 🔥"}
+            </button>
 
-</button>
+            {selectedZoneIndex !== null && liveZones[selectedZoneIndex] && (
+              <div style={{ marginTop: "10px" }}>
+              <h3>Selected Zone</h3>
 
-<br></br>
+              <div><b>{liveZones[selectedZoneIndex].name}</b></div>
+              <div>🌡️ {liveZones[selectedZoneIndex].temp ?? "..."} °C</div>
+              <div>💦 {liveZones[selectedZoneIndex].humidity ?? "..."} %</div>
+              <div>🌞 {getHeatLevel(
+                liveZones[selectedZoneIndex].temp,
+                liveZones[selectedZoneIndex].humidity
+              )}</div>
+              </div>
+            )}
 
+            <button onClick={() => setSelectedZoneIndex(null)}
+              style={{
+                marginTop: "10px",
+                padding: "4px 6px",
+                background: "#1a1a1a",
+                color: "white",
+                border: "1px solid #333",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "13px",
+                transition: "0.2s",
+              }}>
+              Clear Selection
+            </button>
 
-          <button
-  style={{
-    
-    padding: "4px 6px",
-    background: "#1a1a1a",
-    color: "white",
-    border: "1px solid #333",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    transition: "0.2s",
-  }}
-  onMouseEnter={(e) => e.target.style.background = "#333"}
-  onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
-  onClick={() => setShowHeatZones(prev => !prev)}>
-  {showHeatZones ? "Hide Heat Zones 🌤️" : "Show Heat Zones 🔥"}
+            { /*<div style={{ marginTop: "20px" }}>
+              <label>🔥 Heat Intensity</label>
 
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={heatMultiplier}
+                onChange={(e) => setHeatMultiplier(parseFloat(e.target.value))}
+                style={{ width: "100%" }}
+              />
 
+              <div style={{ fontSize: "12px", opacity: 0.7 }}>
+                Multiplier: {heatMultiplier.toFixed(1)}
+              </div>
+            </div>*/ }
 
-</button>
+            <br /><br />
+          </>
+        )}
+      </div>
 
-{selectedZoneIndex !== null && liveZones[selectedZoneIndex] && (
-  <div style={{ marginTop: "10px",
-    
-   }}>
-    <h3>Selected Zone</h3>
-
-    <div><b>{liveZones[selectedZoneIndex].name}</b></div>
-    <div>🌡️ {liveZones[selectedZoneIndex].temp ?? "..."} °C</div>
-    <div>💦 {liveZones[selectedZoneIndex].humidity ?? "..."} %</div>
-    <div>🌞 {getHeatLevel(
-      liveZones[selectedZoneIndex].temp,
-      liveZones[selectedZoneIndex].humidity
-    )}</div>
-  </div>
-)}
-
-<button onClick={() => setSelectedZoneIndex(null)}
-  style={{
-    marginTop: "10px",
-    padding: "4px 6px",
-    background: "#1a1a1a",
-    color: "white",
-    border: "1px solid #333",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    transition: "0.2s",
-  }}>
-  Clear Selection
-</button>
-
-{/*<div style={{ marginTop: "20px" }}>
-  <label>🔥 Heat Intensity</label>
-
-  <input
-    type="range"
-    min="0.5"
-    max="2"
-    step="0.1"
-    value={heatMultiplier}
-    onChange={(e) => setHeatMultiplier(parseFloat(e.target.value))}
-    style={{ width: "100%" }}
-  />
-
-  <div style={{ fontSize: "12px", opacity: 0.7 }}>
-    Multiplier: {heatMultiplier.toFixed(1)}
-  </div>
-</div>*/}
-
-          <br /><br />
-
-        </>
-      )}
-    </div>
-
-    {/* MAMATA */}
-   <div style={{ 
-  flex: 1, 
-  position: "relative",
-  height: "100%",
-  width: "100%"
-}}>
-
-<div
-  style={{
-    position: "absolute",
-    top: 15,
-    right: 15,
-    zIndex: 1000,
-  }}
->
-  {/* Toggle Button */}
-  <div
-    onClick={() => setLegendOpen(!legendOpen)}
-    style={{
-      background: "rgba(17,17,17,0.9)",
-      color: "white",
-      padding: "6px 10px",
-      borderRadius: "6px",
-      border: "1px solid #333",
-      fontSize: "12px",
-      cursor: "pointer",
-      textAlign: "center",
-    }}
-  >
-    {legendOpen ? "✕ Legend" : "☰ Legend"}
-  </div>
-
-  {/* Expandable Panel */}
-  {legendOpen && (
-    <div
-      style={{
-        marginTop: "6px",
-        background: "rgba(17,17,17,0.85)",
-        padding: "8px",
-        borderRadius: "6px",
-        border: "1px solid #333",
-        fontSize: "11px",
-        width: "110px",
-        backdropFilter: "blur(4px)",
-        color: "white",
-        transition: "all 0.2s ease",
-      }}
-    >
-      {[
-        
-  { color: "#8b0000", label: "extreme" },
-  { color: "red", label: "high" },
-  { color: "orange", label: "moderate" },
-  { color: "yellow", label: "low" }
-
-       
-      ].map((item, i) => (
+      {/* MAMATA */}
+      <div style={{
+        flex: 1,
+        position: "relative",
+        height: "100%",
+        width: "100%"
+      }}>
         <div
-           key={i}
-          onMouseEnter={() => setHoveredLevel(item.label)}
-          onMouseLeave={() => setHoveredLevel(null)}
-
           style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "4px",
-            cursor: "pointer"
+            position: "absolute",
+            top: 15,
+            right: 15,
+            zIndex: 1000,
           }}
         >
+          {/* Toggle Button */}
           <div
+            onClick={() => setLegendOpen(!legendOpen)}
             style={{
-              width: "10px",
-              height: "10px",
-              background: item.color,
-              marginRight: "6px",
-              borderRadius: "2px"
-            }}
-          />
-          <span>{item.label}</span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
-      {/* FLOATING BUTTON */}
-      <button
-        onClick={() => setPanelOpen(prev => !prev)}
-       style={{marginBottom: "10px",
-  width: panelOpen ? "160px" : "0px",
-  minWidth: panelOpen ? "160px" : "0px",
-  flexShrink: 0,
-  transition: "all 0.3s ease",
-  overflow: "hidden",
-  background: "#0d0d0d",
-  color: "white",
-  padding: panelOpen ? "12px" : "0px",
-  borderRight: panelOpen ? "1px solid #222" : "none",
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px"
-}}
-      >
-        {panelOpen ? "←" : "→"}
-      </button>
-
-      <MapContainer
-        center={kolkataPosition}
-        zoom={11}
-        
-          style={{ 
-    height: "100%", 
-    width: "100%",
-    position: "absolute", 
-    top: 0,
-    left: 0
-  }}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution="&copy; OpenStreetMap"
-        />
-
-
-        {geoData && <FitBounds geoData={geoData} />}
-
-        {showBoundary && geoData && (
-          <GeoJSON
-            data={geoData}
-            style={{
+              background: "rgba(17,17,17,0.9)",
               color: "white",
-              weight: 3,
-              fillOpacity: 0.1,
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #333",
+              fontSize: "12px",
+              cursor: "pointer",
+              textAlign: "center",
             }}
+          >
+            {legendOpen ? "✕ Legend" : "☰ Legend"}
+          </div>
+
+          {/* Expandable Panel */}
+          {legendOpen && (
+            <div
+              style={{
+                marginTop: "6px",
+                background: "rgba(17,17,17,0.85)",
+                padding: "8px",
+                borderRadius: "6px",
+                border: "1px solid #333",
+                fontSize: "11px",
+                width: "110px",
+                backdropFilter: "blur(4px)",
+                color: "white",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {[
+                { color: "#8b0000", label: "extreme" },
+                { color: "red", label: "high" },
+                { color: "orange", label: "moderate" },
+                { color: "yellow", label: "low" }
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  onMouseEnter={() => setHoveredLevel(item.label)}
+                  onMouseLeave={() => setHoveredLevel(null)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "4px",
+                    cursor: "pointer",
+                    padding: "0px",
+                    margin: "0px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      background: item.color,
+                      marginRight: "6px",
+                      borderRadius: "2px",
+                    }}
+                  />
+                    <span style={{ paddingLeft: "6px" }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* FLOATING BUTTON */}
+        <button
+          onClick={() => setPanelOpen(prev => !prev)}
+          style={{
+            marginBottom: "10px",
+            width: panelOpen ? "160px" : "0px",
+            minWidth: panelOpen ? "160px" : "0px",
+            flexShrink: 0,
+            transition: "all 0.3s ease",
+            overflow: "hidden",
+            background: "#0d0d0d",
+            color: "white",
+            padding: panelOpen ? "12px" : "0px",
+            borderRight: panelOpen ? "1px solid #222" : "none",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          {panelOpen ? "←" : "→"}
+        </button>
+
+        <MapContainer
+          center={kolkataPosition}
+          zoom={11}
+          minZoom={5}
+          maxZoom={17}
+          style={{
+            height: "100%",
+            width: "100%",
+            position: "absolute",
+            top: 0,
+            left: 0,
+          }}
+        >
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            attribution="&copy; OpenStreetMap"
           />
-        )}
 
-        {/* Meowrrker */}
-        <Marker position={kolkataPosition}>
-          <Popup>Kolkata</Popup>
-        </Marker>
+          {geoData && <FitBounds geoData={geoData} />}
 
-        {/* Hot zones hehehehe iykyk */}
-        {showHeatZones && liveZones.map((zone, i) => {
-  const level = getHeatLevel(zone.temp, zone.humidity);
-  const isHighlighted = hoveredLevel === level;
+          {showBoundary && geoData && (
+            <GeoJSON
+              data={geoData}
+              style={{
+                color: "white",
+                weight: 3,
+                fillOpacity: 0.1,
+              }}
+            />
+          )}
 
-  return (
-    <Circle
-      key={i}
-      center={zone.center}
-      radius={Math.sqrt(zone.area / Math.PI)}
-      eventHandlers={{
-        click: () => setSelectedZoneIndex(i),
-      }}
-      pathOptions={{
-        stroke: isHighlighted,
-        color: isHighlighted ? "white" : undefined,
-        weight: isHighlighted ? 3 : 0,
-        fillColor: getColor(zone.temp, zone.humidity),
-        fillOpacity: hoveredLevel
-          ? isHighlighted ? 0.9 : 0.15
-          : getOpacity(zone.temp, zone.humidity),
-      }}
-    >
-      <Popup>
-        <b>{zone.name}</b><br />
-        🌡️ {zone.temp ?? "..."} °C<br />
-        💦 {zone.humidity ?? "..."} %<br />
-        🌞 {level}<br />
-        📐 {(zone.area / 1_000_000).toFixed(2)} sq km
-      </Popup>
-    </Circle>
+          {/* Meowrrker */}
+          <Marker position={kolkataPosition}>
+            <Popup>Kolkata</Popup>
+          </Marker>
+
+          {/* Hot zones hehehehe iykyk */}
+          {showHeatZones && liveZones.map((zone, i) => {
+            const level = getHeatLevel(zone.temp, zone.humidity);
+            const isHighlighted = hoveredLevel === level;
+
+            return (
+              <Circle
+                key={i}
+                center={zone.center}
+                radius={Math.sqrt(zone.area / Math.PI)}
+                eventHandlers={{
+                  click: () => setSelectedZoneIndex(i),
+                }}
+                pathOptions={{
+                  stroke: isHighlighted,
+                  color: isHighlighted ? "white" : undefined,
+                  weight: isHighlighted ? 3 : 0,
+                  fillColor: getColor(zone.temp, zone.humidity),
+                  fillOpacity: hoveredLevel
+                    ? isHighlighted ? 0.9 : 0.15
+                    : getOpacity(zone.temp, zone.humidity),
+                }}
+              >
+                <Popup>
+                  <b>{zone.name}</b><br />
+                  🌡️ {zone.temp ?? "..."} °C<br />
+                  💦 {zone.humidity ?? "..."} %<br />
+                  🌞 {level}<br />
+                  📐 {(zone.area / 1_000_000).toFixed(2)} sq km
+                </Popup>
+              </Circle>
+            );
+          })}
+
+          {selectedZoneIndex !== null && (
+            <FlyToZone center={liveZones[selectedZoneIndex].center} />
+          )}
+        </MapContainer>
+      </div>
+    </div>
   );
-})}
-
-        {selectedZoneIndex !== null && (
-  <FlyToZone center={liveZones[selectedZoneIndex].center} />
-)}
-      </MapContainer>
-    </div> 
-
-  </div> 
-);
 };
+
 export default KolkataMap;
 
