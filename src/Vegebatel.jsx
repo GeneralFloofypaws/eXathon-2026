@@ -20,7 +20,7 @@ const VegebatelMap = () => {
   const kolkataPosition = [22.5726, 88.3639];
   const [panelOpen, setPanelOpen] = useState(true);
   const [showBoundary, setShowBoundary] = useState(true);
-  const [showGrid, setShowGrid] = useState(true);
+  const [showGridBorders, setShowGridBorders] = useState(true);
   const [showVegebatels, setShowVegebatels] = useState(true);
   const [geoData, setGeoData] = useState(null);
   const [vegebatelData, setVegebatelData] = useState(null);
@@ -165,6 +165,7 @@ const VegebatelMap = () => {
 
             <button
               style={{
+                marginBottom: "10px",
                 padding: "4px 6px",
                 background: "#1a1a1a",
                 color: "white",
@@ -178,7 +179,7 @@ const VegebatelMap = () => {
               onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
               onClick={() => setShowVegebatels(prev => !prev)}
             >
-              {showVegebatels ? "Hide Vegetation" : "Show Vegetation"}
+              {showVegebatels ? "Hide Vegetation 🍁" : "Show Vegetation 🌿"}
             </button>
 
             <br />
@@ -196,9 +197,9 @@ const VegebatelMap = () => {
               }}
               onMouseEnter={(e) => e.target.style.background = "#333"}
               onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
-              onClick={() => setShowGrid(prev => !prev)}
+              onClick={() => setShowGridBorders(prev => !prev)}
             >
-              {showGrid ? "Hide Grid" : "Show Grid"}
+              {showGridBorders ? "Hide Grid Borders 🧩" : "Show Grid Borders 🧱"}
             </button>
           </>
         )}
@@ -240,7 +241,7 @@ const VegebatelMap = () => {
             }}
           />
         )}
-        {showGrid && gridCells.length && gridCells.map((cell, idx) => {
+        {showGridBorders && gridCells.length && gridCells.map((cell, idx) => {
           const [lat, lon] = cell.center;
           return (
             <Rectangle
