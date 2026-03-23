@@ -37,7 +37,7 @@ const FitBounds = ({ geoData }) => {
   return null;
 };
 
-const RainfallMap = () => {
+const RainfallMap = ({ setPage }) => {
 
   const kolkataPosition = [22.5726, 88.3639];
   const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
@@ -245,6 +245,22 @@ const RainfallMap = () => {
 
           <>
             <h2 class="controls-title">Controls</h2>
+
+            <button
+  onClick={() => setPage("landing")}
+  style={{
+    marginBottom: "10px",
+    padding: "4px 6px",
+    background: "#1a1a1a",
+    color: "white",
+    border: "1px solid #333",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px"
+  }}
+>
+  ← Back
+</button>
 
             <button
               style={{

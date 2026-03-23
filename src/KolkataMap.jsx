@@ -40,7 +40,7 @@ const FitBounds = ({ geoData }) => {
   return null;
 };
 
-const KolkataMap = () => {
+const KolkataMap = ({ setPage }) =>  {
   const kolkataPosition = [22.5726, 88.3639];
   const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 
@@ -215,10 +215,30 @@ const KolkataMap = () => {
           padding: panelOpen ? "15px" : "0px",
           borderRight: panelOpen ? "1px solid #333" : "none"
         }}
+
       >
         {panelOpen && (
           <>
             <h2 class="controls-title">Controls</h2>
+
+            <button
+  onClick={() => setPage("landing")}
+  style={{
+    marginBottom: "10px",
+    padding: "4px 6px",
+    background: "#1a1a1a",
+    color: "white",
+    border: "1px solid #333",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    transition: "0.2s"
+  }}
+  onMouseEnter={(e) => e.target.style.background = "#333"}
+  onMouseLeave={(e) => e.target.style.background = "#1a1a1a"}
+>
+  ← Back
+</button>
 
             <button
               style={{

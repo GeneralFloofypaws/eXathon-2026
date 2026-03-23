@@ -13,9 +13,9 @@ function App() {
     document.body.classList.add("dark-mode");
   }, []);
 
-  if (page === "heat") return <KolkataMap />;
-  if (page === "vegetation") return <Vegebatel />;
-  if (page === "donotwant") return <DONOTWANT />;
+  if (page === "heat") return <KolkataMap setPage={setPage} />;
+  if (page === "vegetation") return <Vegebatel setPage={setPage} />;
+  if (page === "donotwant") return <DONOTWANT setPage={setPage} />;
 
   return <Landing setPage={setPage} />;
 }
